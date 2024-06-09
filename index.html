@@ -8,7 +8,8 @@
     <style>
         body {
             font-family: Arial, sans-serif;
-            background-color: #f0f0f0;
+            background-color: #000000;
+            color: #FFFFFF;
             display: flex;
             justify-content: center;
             align-items: center;
@@ -18,56 +19,105 @@
         .chat-container {
             width: 400px;
             max-width: 100%;
-            background-color: #fff;
+            height: 100%;
+            background-color: #000000;
             box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
             border-radius: 8px;
             overflow: hidden;
+            display: flex;
+            flex-direction: column;
         }
         .chat-box {
-            height: 300px;
+            flex: 1;
             overflow-y: auto;
             padding: 20px;
-            border-bottom: 1px solid #ddd;
+            border-bottom: 1px solid #444444;
+            display: flex;
+            flex-direction: column;
         }
         .message {
+            display: block;
             margin-bottom: 15px;
+            color: #FFFFFF;
+            padding: 10px;
+            border-radius: 10px;
+            max-width: 80%;
+            word-wrap: break-word;
+            white-space: pre-wrap; /* Ensures that line breaks are respected */
+            text-align: left; /* Justify text to the left */
         }
         .message.user {
-            text-align: right;
+            background-color: #444444;
+            align-self: flex-end;
         }
         .message.bot {
-            text-align: left;
+            background-color: #D3D3D3;
+            color: #000000;
+            align-self: flex-start;
         }
         .input-container {
             display: flex;
-            border-top: 1px solid #ddd;
+            border-top: 1px solid #444444;
+            background-color: #000000;
+            align-items: center; /* Ensure items are vertically aligned */
+            padding: 0px; /* Add padding to input container */
         }
-        .input-container input {
+        .input-container .emojionearea {
             flex: 1;
-            padding: 15px;
-            border: none;
-            border-top-left-radius: 0;
-            border-bottom-left-radius: 0;
+            max-width: calc(119% - 210px); /* Adjusted max-width to consider the button and icon container widths */
         }
         .input-container button {
-            padding: 15px;
             border: none;
-            background-color: #007bff;
-            color: #fff;
+            background-color: #800080;
+            color: #FFFFFF;
             cursor: pointer;
-            border-top-right-radius: 0;
-            border-bottom-right-radius: 0;
+            height: 50px; /* Set height to match the input */
+            box-sizing: border-box; /* Include padding in height */
         }
         .input-container button:hover {
-            background-color: #0056b3;
+            background-color: #5A005A;
+        }
+        .input-container input[type="file"] {
+            display: none;
+        }
+        .icon-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0 15px;
+            background-color: #800080;
+            cursor: pointer;
+            color: white;
+            height: 50px; /* Set height to match the button */
+            box-sizing: border-box; /* Include padding in height */
+        }
+        .icon-container:hover {
+            background-color: #5A005A;
+        }
+        .emojionearea .emojionearea-editor {
+            height: auto !important;
+        }
+        .emojionearea .emojionearea-editor {
+    height: auto !important;
+    min-height: 4em; /* Set the minimum height */
+}
+        .emojionearea .emojionearea-button {
+            margin-top: 6px; /* Adjust this value to align the emoji icon */
         }
     </style>
 </head>
 <body>
     <div class="chat-container">
         <div class="chat-box" id="chat-box"></div>
-        <div class="input-container">
-            <input type="text" id="user-input" placeholder="Escribe un mensaje...">
+        <div class="input-container" id="input-container">
+            <div class="icon-container" onclick="document.getElementById('image-input').click();">
+                📷
+            </div>
+            <div class="icon-container" id="record-voice">
+                🎤
+            </div>
+            <input type="file" id="image-input" accept="image/*" onchange="sendImage()">
+            <textarea id="user-input" rows="1" placeholder="Escribe un mensaje..."></textarea>
             <button onclick="sendMessage()">Enviar</button>
         </div>
     </div>
@@ -81,19 +131,59 @@
             });
         });
 
+        let mediaRecorder;
+        let audioChunks = [];
+
+        document.getElementById('record-voice').addEventListener('click', () => {
+            if (!mediaRecorder || mediaRecorder.state === "inactive") {
+                navigator.mediaDevices.getUserMedia({ audio: true })
+                    .then(stream => {
+                        mediaRecorder = new MediaRecorder(stream);
+                        mediaRecorder.start();
+                        mediaRecorder.ondataavailable = event => {
+                            audioChunks.push(event.data);
+                        };
+                        mediaRecorder.onstop = () => {
+                            const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
+                            audioChunks = [];
+                            const reader = new FileReader();
+                            reader.onload = function(e) {
+                                displayMessage('user', { type: 'voice', content: e.target.result });
+                            };
+                            reader.readAsDataURL(audioBlob);
+                        };
+                    })
+                    .catch(error => console.error(error));
+            } else if (mediaRecorder.state === "recording") {
+                mediaRecorder.stop();
+            }
+        });
+
         function sendMessage() {
-            const userInput = $("#user-input")[0].emojioneArea.getText();
+            const userInput = $("#user-input").data("emojioneArea").getText();
             const message = userInput.trim();
 
             if (message === '') return;
 
             displayMessage('user', { type: 'text', content: message });
-            $("#user-input")[0].emojioneArea.setText('');
+            $("#user-input").data("emojioneArea").setText('');
 
             setTimeout(() => {
                 const botResponse = getBotResponse(message);
                 displayMessage('bot', botResponse);
             }, 1000);
+        }
+
+        function sendImage() {
+            const fileInput = document.getElementById('image-input');
+            const file = fileInput.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    displayMessage('user', { type: 'image', content: e.target.result });
+                };
+                reader.readAsDataURL(file);
+            }
         }
 
         function displayMessage(sender, message) {
@@ -108,12 +198,11 @@
                 img.src = message.content;
                 img.style.maxWidth = '100%';
                 messageElement.appendChild(img);
-            } else if (message.type === 'video') {
-                const video = document.createElement('video');
-                video.src = message.content;
-                video.controls = true;
-                video.style.maxWidth = '100%';
-                messageElement.appendChild(video);
+            } else if (message.type === 'voice') {
+                const audio = document.createElement('audio');
+                audio.controls = true;
+                audio.src = message.content;
+                messageElement.appendChild(audio);
             }
 
             chatBox.appendChild(messageElement);
@@ -126,7 +215,6 @@
                 '¿cómo estás?': { type: 'text', content: 'Estoy bien, gracias. ¿Y tú?' },
                 'adiós': { type: 'text', content: 'Adiós. ¡Que tengas un buen día!' },
                 'muestra una imagen': { type: 'image', content: 'bebe.jpg' },
-                'muestra un video': { type: 'video', content: 'dinero.mp4' },
             };
 
             message = message.toLowerCase();
