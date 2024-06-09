@@ -60,11 +60,11 @@
             border-top: 1px solid #444444;
             background-color: #000000;
             align-items: center; /* Ensure items are vertically aligned */
-            padding: 0px; /* Add padding to input container */
+            padding: 0; /* Remove padding from input container */
         }
         .input-container .emojionearea {
             flex: 1;
-            max-width: calc(119% - 210px); /* Adjusted max-width to consider the button and icon container widths */
+            max-width: calc(110% - 155px); /* Adjusted max-width to consider the button and icon container widths */
         }
         .input-container button {
             border: none;
@@ -84,7 +84,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            padding: 0 15px;
+            padding: 0 10px;
             background-color: #800080;
             cursor: pointer;
             color: white;
@@ -96,13 +96,14 @@
         }
         .emojionearea .emojionearea-editor {
             height: auto !important;
+            min-height: 50px; /* Set the minimum height */
+            font-size: 20px; /* Set the font size */
         }
-        .emojionearea .emojionearea-editor {
-    height: auto !important;
-    min-height: 4em; /* Set the minimum height */
-}
         .emojionearea .emojionearea-button {
             margin-top: 6px; /* Adjust this value to align the emoji icon */
+        }
+        textarea#user-input {
+            font-size: 18px; /* Set the font size for the text area */
         }
     </style>
 </head>
