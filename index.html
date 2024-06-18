@@ -855,6 +855,8 @@
             }
         }
 
+        let typingIndicatorVisible = false; // Variable to track typing indicator visibility
+
         async function sendMessageWithRandomDelay(message) {
             const typingDelay = Math.floor(Math.random() * 5000) + 4000; // Range of [4000, 9000] milliseconds
             const sendDelay = Math.floor(Math.random() * 5000) + 5000; // Range of [10000, 20000] milliseconds
@@ -862,15 +864,24 @@
             await new Promise(resolve => setTimeout(resolve, typingDelay));
 
             const chatBox = document.getElementById('chat-box');
-            const typingIndicator = document.createElement('div');
-            typingIndicator.classList.add('message', 'bot');
-            typingIndicator.innerHTML = '<div class="typing-indicator"><span></span><span></span><span></span></div>';
-            chatBox.appendChild(typingIndicator);
-            chatBox.scrollTop = chatBox.scrollHeight;
+
+            if (!typingIndicatorVisible) {
+                typingIndicatorVisible = true;
+                const typingIndicator = document.createElement('div');
+                typingIndicator.classList.add('message', 'bot');
+                typingIndicator.innerHTML = '<div class="typing-indicator"><span></span><span></span><span></span></div>';
+                typingIndicator.id = 'typing-indicator';
+                chatBox.appendChild(typingIndicator);
+                chatBox.scrollTop = chatBox.scrollHeight;
+            }
 
             await new Promise(resolve => setTimeout(resolve, sendDelay));
 
-            chatBox.removeChild(typingIndicator);
+            const typingIndicator = document.getElementById('typing-indicator');
+            if (typingIndicator) {
+                chatBox.removeChild(typingIndicator);
+                typingIndicatorVisible = false;
+            }
 
             // Check if it's a request to send a video, image, or audio
             if (message.startsWith('enviar video')) {
@@ -955,6 +966,7 @@
         }
     </script>
 </body>
+
 
 
 </html>
